@@ -126,9 +126,9 @@ declare namespace Moleculer {
 		waitForServices(serviceNames: string | Array<string>, timeout?: number, interval?: number): Bluebird<void>;
 
 		events?: ServiceEvents;
-		created: () => void;
-		started: () => Bluebird<void>;
-		stopped: () => Bluebird<void>;
+		created(): void
+		started(): Bluebird<void>;
+		stopped(): Bluebird<void>;
 		[name: string]: any;
 	}
 
