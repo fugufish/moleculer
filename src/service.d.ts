@@ -14,9 +14,9 @@ import type {
 import type { TracingActionTags, TracingEventTags } from "./tracing/tracer";
 
 declare namespace Service {
-	type ServiceSyncLifecycleHandler<S = ServiceSettingSchema> = (this: Service<S>) => void;
-	type ServiceAsyncLifecycleHandler<S = ServiceSettingSchema> = (
-		this: Service<S>
+	type ServiceSyncLifecycleHandler<TServiceSettingSchema extends ServiceSettingSchema = ServiceSettingSchema, TService extends Service = Service<TServiceSettingSchema>> = (this: TService) => void;
+	type ServiceAsyncLifecycleHandler<TServiceSettingSchema extends ServiceSettingSchema = ServiceSettingSchema, TService extends Service = Service<TServiceSettingSchema>> = (
+		this: TService
 	) => void | Promise<void>;
 
 	export interface ServiceSearchObj {
@@ -24,21 +24,21 @@ declare namespace Service {
 		version?: string | number;
 	}
 
-	export interface ServiceSchema<S = ServiceSettingSchema> {
+	export interface ServiceSchema<TServiceSettingSchema extends ServiceSettingSchema = ServiceSettingSchema, TService extends Service<TServiceSettingSchema> = Service<TServiceSettingSchema>> {
 		name: string;
 		version?: string | number;
-		settings?: S;
+		settings?: TServiceSettingSchema;
 		dependencies?: string | ServiceDependency | (string | ServiceDependency)[];
 		metadata?: any;
-		actions?: ServiceActionsSchema<S>;
+		actions?: ServiceActionsSchema<TServiceSettingSchema>;
 		mixins?: Partial<ServiceSchema>[];
 		methods?: ServiceMethods;
-		hooks?: ServiceHooks;
+		hooks?: ServiceHooks<TService>;
 
-		events?: EventSchemas<S>;
-		created?: ServiceSyncLifecycleHandler<S> | ServiceSyncLifecycleHandler<S>[];
-		started?: ServiceAsyncLifecycleHandler<S> | ServiceAsyncLifecycleHandler<S>[];
-		stopped?: ServiceAsyncLifecycleHandler<S> | ServiceAsyncLifecycleHandler<S>[];
+		events?: EventSchemas<TServiceSettingSchema>;
+		created?: ServiceSyncLifecycleHandler<TServiceSettingSchema, TService> | ServiceSyncLifecycleHandler<TServiceSettingSchema, TService>[];
+		started?: ServiceAsyncLifecycleHandler<TServiceSettingSchema, TService> | ServiceAsyncLifecycleHandler<TServiceSettingSchema, TService>[];
+		stopped?: ServiceAsyncLifecycleHandler<TServiceSettingSchema, TService> | ServiceAsyncLifecycleHandler<TServiceSettingSchema, TService>[];
 
 		// [key: string]: any;
 	}
@@ -135,9 +135,9 @@ declare namespace Service {
 		version?: string | number;
 	}
 
-	export type ActionHookBefore = (ctx: Context<any, any>) => Promise<void> | void;
-	export type ActionHookAfter = (ctx: Context<any, any>, res: any) => Promise<any> | any;
-	export type ActionHookError = (ctx: Context<any, any>, err: Error) => Promise<void> | void;
+	export type ActionHookBefore<TService extends Service> = (this: TService, ctx: Context<any, any>) => Promise<void> | void;
+	export type ActionHookAfter<TService extends Service> = (this: TService, ctx: Context<any, any>, res: any) => Promise<any> | any;
+	export type ActionHookError<TService extends Service> = (this: TService, ctx: Context<any, any>, err: Error) => Promise<void> | void;
 
 	export interface ActionHooks {
 		before?: string | ActionHookBefore | (string | ActionHookBefore)[];
@@ -145,22 +145,22 @@ declare namespace Service {
 		error?: string | ActionHookError | (string | ActionHookError)[];
 	}
 
-	export interface ServiceHooksBefore {
-		[key: string]: string | ActionHookBefore | (string | ActionHookBefore)[];
+	export interface ServiceHooksBefore<TService extends Service> extends ThisType<TService> {
+		[key: string]: string | ActionHookBefore<TService> | (string | ActionHookBefore<TService>)[];
 	}
 
-	export interface ServiceHooksAfter {
-		[key: string]: string | ActionHookAfter | (string | ActionHookAfter)[];
+	export interface ServiceHooksAfter<TService extends Service> extends ThisType<TService> {
+		[key: string]: string | ActionHookAfter<TService> | (string | ActionHookAfter<TService>)[];
 	}
 
-	export interface ServiceHooksError {
-		[key: string]: string | ActionHookError | (string | ActionHookError)[];
+	export interface ServiceHooksError<TService extends Service> {
+		[key: string]: string | ActionHookError<TService> | (string | ActionHookError<TService>)[];
 	}
 
-	export interface ServiceHooks {
-		before?: ServiceHooksBefore;
-		after?: ServiceHooksAfter;
-		error?: ServiceHooksError;
+	export interface ServiceHooks<TService extends Service> {
+		before?: ServiceHooksBefore<TService>;
+		after?: ServiceHooksAfter<TService>;
+		error?: ServiceHooksError<TService>;
 	}
 
 	export type EventSchemaHandler = (ctx: Context) => void | Promise<void>;
