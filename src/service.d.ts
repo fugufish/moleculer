@@ -30,7 +30,7 @@ declare namespace Service {
 		settings?: TServiceSettingSchema;
 		dependencies?: string | ServiceDependency | (string | ServiceDependency)[];
 		metadata?: any;
-		actions?: ServiceActionsSchema<TServiceSettingSchema>;
+		actions?: ServiceActionsSchema<TServiceSettingSchema, TService>;
 		mixins?: Partial<ServiceSchema>[];
 		methods?: ServiceMethods<TService>;
 		hooks?: ServiceHooks<TService>;
@@ -99,13 +99,13 @@ declare namespace Service {
 		};
 	}
 
-	export interface ActionSchema {
+	export interface ActionSchema<TService extends Service = Service> {
 		name?: string;
 		visibility?: ActionVisibility;
 		params?: ActionParams;
 		service?: Service;
 		cache?: boolean | ActionCacheOptions;
-		handler?: ActionHandler;
+		handler?: ActionHandler<TService>;
 		tracing?: boolean | TracingActionOptions;
 		bulkhead?: BulkheadOptions;
 		circuitBreaker?: BrokerCircuitBreakerOptions;
@@ -121,11 +121,11 @@ declare namespace Service {
 		// [key: string]: any;
 	}
 
-	export type ActionHandler = (ctx: Context<any, any>) => Promise<any> | any;
+	export type ActionHandler<TService extends Service = Service> = (this: TService, ctx: Context<any, any>) => Promise<any> | any;
 
-	export type ServiceActionsSchema<S = ServiceSettingSchema> = {
-		[key: string]: ActionSchema | ActionHandler | boolean;
-	} & ThisType<Service<S>>;
+	export type ServiceActionsSchema<TSettingsSchema = ServiceSettingSchema, TService extends Service = Service> = {
+		[key: string]: ActionSchema<TService> | ActionHandler<TService> | boolean;
+	} & ThisType<Service<TSettingsSchema>>;
 
 	export type ServiceMethod = (...args: any[]) => any & ThisType<Service>;
 	export type ServiceMethods<TService extends Service = Service> = { [key: string]: (...args: any[]) => any } & ThisType<TService>;
