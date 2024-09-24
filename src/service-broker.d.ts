@@ -416,7 +416,7 @@ declare class ServiceBroker {
 
 	getLocalService(name: string | ServiceDependency): Service;
 
-	createService(schema: ServiceSchema, schemaMods?: ServiceSchema): Service;
+	createService<TService extends Service = Service>(schema: ServiceSchema<TService>, schemaMods?: ServiceSchema): Service;
 
 	_restartService(service: Service): Promise<void>;
 

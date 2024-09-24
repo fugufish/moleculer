@@ -1,7 +1,6 @@
 import Context = require("./context");
 import ServiceBroker = require("./service-broker");
 import Strategy = require("./strategies/base");
-import type { MoleculerError } from "./errors";
 import type { Logger } from "./logger-factory";
 import type { CacherKeygen } from "./cachers/base";
 import type { BulkheadOptions } from "./middlewares";
@@ -14,9 +13,10 @@ import type {
 import type { TracingActionTags, TracingEventTags } from "./tracing/tracer";
 
 declare namespace Service {
-	type ServiceSyncLifecycleHandler<S = ServiceSettingSchema> = (this: Service<S>) => void;
-	type ServiceAsyncLifecycleHandler<S = ServiceSettingSchema> = (
-		this: Service<S>
+	type ServiceSyncLifecycleHandler<TService extends Service> = (this: TService) => void;
+
+	type ServiceAsyncLifecycleHandler<TService extends Service> = (
+		this: TService
 	) => void | Promise<void>;
 
 	export interface ServiceSearchObj {
@@ -24,22 +24,21 @@ declare namespace Service {
 		version?: string | number;
 	}
 
-	export interface ServiceSchema<S = ServiceSettingSchema> {
+	export interface ServiceSchema<TService extends Service = Service> {
 		name: string;
 		version?: string | number;
-		settings?: S;
+		settings?: TService["settings"];
 		dependencies?: string | ServiceDependency | (string | ServiceDependency)[];
 		metadata?: any;
-		actions?: ServiceActionsSchema<S>;
-		mixins?: Partial<ServiceSchema>[];
-		methods?: ServiceMethods;
+		actions?: ServiceActionsSchema<TService>;
+		mixins?: Partial<ServiceSchema<any>>[];
+		methods?: ServiceMethods<TService>;
 		hooks?: ServiceHooks;
 
-		events?: EventSchemas<S>;
-		created?: ServiceSyncLifecycleHandler<S> | ServiceSyncLifecycleHandler<S>[];
-		started?: ServiceAsyncLifecycleHandler<S> | ServiceAsyncLifecycleHandler<S>[];
-		stopped?: ServiceAsyncLifecycleHandler<S> | ServiceAsyncLifecycleHandler<S>[];
-
+		events?: EventSchemas<TService["settings"]>;
+		created?: ServiceSyncLifecycleHandler<TService> | ServiceSyncLifecycleHandler<TService>[];
+		started?: ServiceAsyncLifecycleHandler<TService> | ServiceAsyncLifecycleHandler<TService>[];
+		stopped?: ServiceAsyncLifecycleHandler<TService> | ServiceAsyncLifecycleHandler<TService>[];
 		// [key: string]: any;
 	}
 
@@ -123,12 +122,12 @@ declare namespace Service {
 
 	export type ActionHandler = (ctx: Context<any, any>) => Promise<any> | any;
 
-	export type ServiceActionsSchema<S = ServiceSettingSchema> = {
+	export type ServiceActionsSchema<TService extends Service> = {
 		[key: string]: ActionSchema | ActionHandler | boolean;
-	} & ThisType<Service<S>>;
+	} & ThisType<TService>;
 
 	export type ServiceMethod = (...args: any[]) => any & ThisType<Service>;
-	export type ServiceMethods = { [key: string]: (...args: any[]) => any } & ThisType<Service>;
+	export type ServiceMethods<TService> = { [key: string]: (...args: any[]) => any } & ThisType<TService>;
 
 	export interface ServiceDependency {
 		name: string;
